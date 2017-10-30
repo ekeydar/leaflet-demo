@@ -32,30 +32,48 @@
             layers: [osm, hiking, grayscale, streets]
         });
         var files = [
-                {
-                    'name': 'district',
-                    'url': '/data/j12n_district_3.json'
+            {
+                'name': 'district',
+                'url': '/data/j12n_district_3.json',
+                'style': {
+                    'color': 'red'
                 },
+            },
             {
                 'url': '/data/j12n_ranger_area_1.json',
                 'name': 'ranger area',
+                'style': {
+                    'color': 'red'
                 },
+            },
             {
                 'url': '/data/j12n_region_2.json',
                 'name': 'region',
+                'style': {
+                    'color': 'red'
+                },
             },
             {
                 'url': '/data/npnrs.json',
-                'name': 'npnrs'
+                'name': 'npnrs',
+                'style': {
+                    'color': 'green'
+                },
             }
         ];
         var layers = [];
+        var bindName = function(feature, layer) {
+            layer.bindTooltip(feature.properties.name);
+        }
         var readAll = files.map(
-            function(f) {
+            function (f) {
                 return $.ajax(f.url).done(function (data) {
                     //console.log(f.name, data.length);
                     layers.push({
-                        'layer': L.geoJSON(data),
+                        'layer': L.geoJSON(data, {
+                            style: f.style,
+                            onEachFeature: bindName,
+                        }),
                         'name': f.name
                     })
                     console.log("read " + f.name);
@@ -63,12 +81,12 @@
                 });
             });
         console.log(readAll);
-        $.when.apply($, readAll).then(function() {
+        $.when.apply($, readAll).then(function () {
             console.log('# layers = ' + layers.length);
             var overlays = {
                 'hiking': hiking,
             }
-            layers.forEach(function(l) {
+            layers.forEach(function (l) {
                 overlays[l.name] = l.layer
             });
             L.control.layers({
