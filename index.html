@@ -10,7 +10,7 @@
 <script src="bower_components/jquery/dist/jquery.js"></script>
 <script src="bower_components/leaflet/dist/leaflet.js"></script>
 <script>
-    var initMap = function() {
+    var initMap = function () {
         var osm = L.tileLayer('http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             attribution: '(c) osm'
         });
@@ -28,21 +28,57 @@
 
         var mymap = L.map('mapid', {
             center: [32.10, 34.85],
-            zoom: 10,
+            zoom: 14,
             layers: [osm, hiking, grayscale, streets]
         });
-
-        L.control.layers({
-            'osm': osm,
-            'grayscale': grayscale,
-            'streets': streets,
-        }, {
-            'hiking': hiking,
-        }).addTo(mymap);
-    }
-    $.ajax("/files/npnrs.json").done(function(data) {
-        console.log(data.length);
-    })
+        var files = [
+                {
+                    'name': 'district',
+                    'url': '/data/j12n_district_3.json'
+                },
+            {
+                'url': '/data/j12n_ranger_area_1.json',
+                'name': 'ranger area',
+                },
+            {
+                'url': '/data/j12n_region_2.json',
+                'name': 'region',
+            },
+            {
+                'url': '/data/npnrs.json',
+                'name': 'npnrs'
+            }
+        ];
+        var layers = [];
+        var readAll = files.map(
+            function(f) {
+                return $.ajax(f.url).done(function (data) {
+                    //console.log(f.name, data.length);
+                    layers.push({
+                        'layer': L.geoJSON(data),
+                        'name': f.name
+                    })
+                    console.log("read " + f.name);
+                    return true;
+                });
+            });
+        console.log(readAll);
+        $.when.apply($, readAll).then(function() {
+            console.log('# layers = ' + layers.length);
+            var overlays = {
+                'hiking': hiking,
+            }
+            layers.forEach(function(l) {
+                overlays[l.name] = l.layer
+            });
+            L.control.layers({
+                'osm': osm,
+                'grayscale': grayscale,
+                'streets': streets,
+            }, overlays).addTo(mymap);
+        });
+    };
+    initMap();
     //L.control.layers.baselayers['hiking'].visible = true;
 </script>
 </body>
